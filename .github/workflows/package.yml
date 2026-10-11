@@ -1,0 +1,53 @@
+name: Package desktop apps
+
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  package:
+    name: ${{ matrix.platform }} installer
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: linux
+            runner: ubuntu-24.04
+            build: dist:linux
+            pattern: release/*.AppImage
+          - platform: windows
+            runner: windows-2022
+            build: dist:win
+            pattern: release/*.exe
+          - platform: macos
+            runner: macos-15
+            build: dist:mac
+            pattern: release/*.dmg
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: Run regression tests
+        run: npm test
+      - name: Build native installer
+        run: npm run ${{ matrix.build }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CSC_LINK: ${{ matrix.platform == 'macos' && secrets.MAC_CSC_LINK || matrix.platform == 'windows' && secrets.WIN_CSC_LINK || '' }}
+          CSC_KEY_PASSWORD: ${{ matrix.platform == 'macos' && secrets.MAC_CSC_KEY_PASSWORD || matrix.platform == 'windows' && secrets.WIN_CSC_KEY_PASSWORD || '' }}
+      - name: Upload installer
+        uses: actions/upload-artifact@v4
+        with:
+          name: sreon-browser-${{ matrix.platform }}
+          path: ${{ matrix.pattern }}
+          if-no-files-found: error
+          retention-days: 14
