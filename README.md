@@ -28,7 +28,7 @@ npm run dist:win    # x64 NSIS setup .exe
 npm run dist:mac    # universal macOS .dmg, on macOS only
 ```
 
-Installers are written to `release/` (ignored by Git). Download workflow artifacts from its run page; they are retained for 14 days. The matrix runs tests before packaging each platform. The workflow does **not** publish a GitHub Release automatically.
+Installers are written to `release/` (ignored by Git). The matrix runs tests before packaging each platform. PR builds upload workflow artifacts (retained for 14 days); successful same-repository PR builds also attach all three installers to a **draft**, unsigned preview release. This is not published as a final release automatically.
 
 ### Signing and release readiness
 
