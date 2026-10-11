@@ -51,29 +51,3 @@ jobs:
           path: ${{ matrix.pattern }}
           if-no-files-found: error
           retention-days: 14
-
-  draft-release:
-    name: Save installers in draft release
-    needs: package
-    # Never run a write-token job for a forked PR. No PR source is checked out
-    # or executed in this job; it only handles artifacts from the build matrix.
-    if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository && github.actor == 'FellowPythonCoder'
-    runs-on: ubuntu-24.04
-    permissions:
-      contents: write
-    steps:
-      - uses: actions/download-artifact@v4
-        with:
-          pattern: sreon-browser-*
-          path: installers
-          merge-multiple: true
-      - name: Create private draft with installer assets
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GH_REPO: ${{ github.repository }}
-          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
-        run: |
-          gh release create "v0.1.0-preview-${GITHUB_RUN_ID}" installers/*.AppImage installers/*.exe installers/*.dmg \
-            --target "$HEAD_SHA" --draft --prerelease \
-            --title "SREON Browser 0.1.0 preview (unsigned)" \
-            --notes "Preview installers built from PR #${{ github.event.pull_request.number }}. Windows/macOS binaries are unsigned and macOS is not notarized. Test and sign before public publication."
